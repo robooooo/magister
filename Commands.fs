@@ -12,6 +12,15 @@ module Commands =
     type MagisterCommands() =
         inherit ApplicationCommandModule()
 
+        [<SlashCommand("refresh", "Refresh your memory of the tome.")>]
+        member public self.Refresh (ctx: InteractionContext) = task {
+            do! ctx.CreateResponseAsync(
+                content = "It is done.",
+                ephemeral = true
+            )
+            do! updateTome ctx.Client
+        }
+
         [<SlashCommand("cast", "Using a thread of your willpower, exert control on the peon.")>]
         member public self.Cast(
             ctx: InteractionContext, 
@@ -43,12 +52,6 @@ module Commands =
                             | User(_, _) -> l
                         ) 
                 let _ = (data.lines = updated)
-                data
-            )
-
-            // Update the users line, adding the thing
-            let _ = updateUser userId (fun data ->
-                data.line = Some line |> ignore
                 data
             )
 

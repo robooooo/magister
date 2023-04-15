@@ -4,3 +4,7 @@ obj/
 tokens.txt
 .fake
 *.db
+node_modules/*
+tmp.txt
+tmp.js
+peon.json
