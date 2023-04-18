@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 const random = (min, max) => Math.floor(Math.random() * (max - min)) + min;
-const { Client, Events, GatewayIntentBits, Status, GatewayIntents } = require("discord.js");
+const { Client, Events, GatewayIntentBits, Status } = require("discord.js");
 const { discordToken, cohereToken } = require("./peon.json");
 const randomColor = require("randomcolor");
 const cohere = require("cohere-ai");
@@ -22,7 +22,7 @@ client.on(Events.Error, (e) => {
 
 async function giveRandomItem(e) {
     if (random(0, 2) === 0) {
-        const col = randomColor();
+        const col = randomColor().replace("#", "0x")
         e.channel.send({
             embeds: [{
                 color: parseInt(col, 16),
@@ -85,10 +85,12 @@ client.on(Events.MessageReactionAdd, async (e) => {
 });
 
 client.on(Events.MessageCreate, async (e) => {
+    if (random(0, 100) === 0)
+        await giveRandomItem(e);
+
     if (!e.content.startsWith("peon, ")) return;
     const content = e.content.replace(/^peon, /, "");
 
-    await giveRandomItem(e);
 
     if (content === "hi")
         e.channel.send("help me");

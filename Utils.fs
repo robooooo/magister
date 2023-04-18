@@ -12,6 +12,25 @@ module Utils =
     let guild = 1095214570013990914UL
     let tome = 1095489773726072962UL
 
+    let buildTome (lineNo : int) (line : string) (user : uint64) =
+        let glob = getGlobal
+        // We insert first so we don't have to modify line numbers
+        // Insert with the special userId 0, then we change it after
+        let updated = 
+            glob.lines 
+                |> List.insertAt (int lineNo) (User(0UL, line))
+                |> List.where (function
+                    // False (evict) if equal to user
+                    | User(u, _) when u = user -> false
+                    | _ -> true
+                )
+                |> List.map (fun l -> 
+                    match l with
+                    | User(0UL, s) -> User(user, s)
+                    | _ -> l
+                ) 
+        updated
+
     let updateTome (discord : DiscordClient) = task {
         let glob = getGlobal
         // The resulting file is based on the lines given, with comments added describing line origin
@@ -30,12 +49,12 @@ module Utils =
             glob.lines
             |> List.mapi (fun i l -> 
                 match l with
-                | Magister line ->    $"# {pad i} BY HIS DIVINE MAGESTY   "
-                | User(uid, line) -> $"# {pad i} User {uid}"
+                | Magister _ ->    $"{pad i} BY HIS DIVINE MAGESTY  "
+                | User(uid, _) -> $"{pad i} User {uid}"
             )
             |> List.map id
             |> List.zip (List.map lineString glob.lines)
-            |> List.map (fun (l, c) -> $"/*{c}*/ {l}")
+            |> List.map (fun (l, c) -> $"/* {c} */ {l}")
         
         let! channel = discord.GetChannelAsync tome
         let! lastMessages = channel.GetMessagesAsync 1

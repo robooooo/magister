@@ -7,6 +7,8 @@ open DSharpPlus.CommandsNext
 open DSharpPlus.SlashCommands
 open Database
 open Utils
+open CliWrap
+open System.Text
 
 module Commands = 
     type MagisterCommands() =
@@ -28,34 +30,32 @@ module Commands =
             [<Option("wish", "A line of great Power that shall control the peon.")>] line : string
         ) = task {
             let userId = ctx.User.Id
-            do! ctx.CreateResponseAsync(
-                content = $"You cast forward a tendril of your power, and the <#{tome}>'s pages flip!", 
-                ephemeral = true
-            )
 
-            // Update global data to remove previous line and add current line
-            let _ = updateGlobal (fun data -> 
-                // We insert first so we don't have to modify line numbers
-                // Insert with the special userId 0, then we change it after
-                let updated = 
-                    data.lines 
-                        |> List.insertAt (int lineNo) (User(0UL, line))
-                        |> List.where (function
-                            | Magister _ -> true
-                            // False (evict) if equal to user
-                            | User(u, _) -> userId <> u
-                        )
-                        |> List.map (fun l -> 
-                            match l with
-                            | Magister _ -> l
-                            | User(0UL, s) -> User(userId, s)
-                            | User(_, _) -> l
-                        ) 
-                let _ = (data.lines = updated)
-                data
-            )
 
-            // Rebuild the tome
-            do! updateTome ctx.Client
-
+            let checkFile = "check.js"
+            // Get a perspective next tome
+            let newTome = buildTome (int lineNo) line userId
+            // Check if the code is syntactically correct, just as a baseline sanity check 
+            File.WriteAllLines(checkFile, Seq.map lineString newTome)
+            let mutable sb = new StringBuilder()
+            let! res = Cli.Wrap("node")
+                          .WithArguments(["--check"; checkFile])
+                          .WithStandardOutputPipe(PipeTarget.ToStringBuilder sb)
+                          .WithStandardErrorPipe(PipeTarget.ToStringBuilder sb)
+                          .WithValidation(CommandResultValidation.None)
+                          .ExecuteAsync()
+            if res.ExitCode = 0 then
+                do! ctx.CreateResponseAsync(
+                    content = $"You cast forward a tendril of your power, and the <#{tome}>'s pages flip!", 
+                    ephemeral = true
+                )
+                // Rebuild the tome
+                updateGlobal_ (fun glob -> { glob with lines = newTome })
+                do! updateTome ctx.Client
+            else
+                // Report error message, why didn't this work?
+                do! ctx.CreateResponseAsync(
+                    content = $"The tome stays dormant in your hands, and you hear laughter...\n```{sb}```",
+                    ephemeral = true
+                )
         }

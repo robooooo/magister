@@ -8,3 +8,6 @@ node_modules/*
 tmp.txt
 tmp.js
 peon.json
+json/
+temp*.js
+check.js

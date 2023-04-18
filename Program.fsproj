@@ -10,10 +10,10 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="cliwrap" Version="3.6.0" />
     <PackageReference Include="DSharpPlus" Version="4.4.0" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.4.0" />
     <PackageReference Include="DSharpPlus.SlashCommands" Version="4.4.0" />
-    <PackageReference Include="litedb" Version="4.1.4" />
-    <PackageReference Include="LiteDB.FSharp" Version="2.16.0" />
+    <PackageReference Include="FSharp.Json" Version="0.4.1" />
   </ItemGroup>
 </Project>
